@@ -1,24 +1,31 @@
+// Firebase Configuration for AYONI Platform
 const firebaseConfig = {
-    apiKey: "AIzaSyDqh0Gtl0lIZl8Rt1PvdE67U8yyhjxpJdw",
-    authDomain: "gomr-3356f.firebaseapp.com",
-    databaseURL: "https://gomr-3356f-default-rtdb.firebaseio.com",
-    projectId: "gomr-3356f",
-    storageBucket: "gomr-3356f.firebasestorage.app",
-    messagingSenderId: "470296286364",
-    appId: "1:470296286364:web:2bb6e28a2095757da88959",
-    measurementId: "G-4MLFT3DHJB"
+    apiKey: "AIzaSyBj3j9Lp-1yKHdEryTvRbl9l2KqTIh-_FU",
+    authDomain: "ckco-f3c2f.firebaseapp.com",
+    databaseURL: "https://ckco-f3c2f-default-rtdb.firebaseio.com",
+    projectId: "ckco-f3c2f",
+    storageBucket: "ckco-f3c2f.firebasestorage.app",
+    messagingSenderId: "230242752167",
+    appId: "1:230242752167:web:78f10b8247ea7e57f12d82",
+    measurementId: "G-DX4KBKLTST"
 };
 
+// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 
 const auth = firebase.auth();
 const db = firebase.database();
 const storage = firebase.storage();
 
-const CLOUD_NAME = 'daemk3hut';
-const UPLOAD_PRESET = 'fok2_k';
-const AGORA_APP_ID_CALL = '4017f66ea15f4ce088e8d8993a072a5b';
-const ADMIN_EMAIL = 'jasim88v@gmail.com';
-const ADMIN_PASSWORD = 'kk2314kk';
+// Cloudinary Configuration
+const CLOUD_NAME = 'dkredfmfe';
+const UPLOAD_PRESET = 'for_5g';
 
-console.log('✅ VIBE - Firebase, Cloudinary & Agora Ready');
+// Agora Configuration
+const AGORA_APP_ID_CALL = '4017f66ea15f4ce088e8d8993a072a5b';
+
+// Admin Configuration
+const ADMIN_EMAIL = 'jasim34m@gmail.com';
+const ADMIN_PASSWORD = 'yy2314yy';
+
+console.log('✅ AYONI - Firebase, Cloudinary & Agora Ready');
