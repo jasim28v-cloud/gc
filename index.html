@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>VIBE | منصة اجتماعية عصرية</title>
+    <title>AYONI | منصة اجتماعية عصرية</title>
     <meta name="theme-color" content="#ff6b35">
     
     <link rel="preconnect" href="https://cdn.tailwindcss.com">
     <link rel="preconnect" href="https://www.gstatic.com">
-    <link rel="preconnect" href="https://gomr-3356f-default-rtdb.firebaseio.com">
+    <link rel="preconnect" href="https://ckco-f3c2f-default-rtdb.firebaseio.com">
     <link rel="preconnect" href="https://api.cloudinary.com">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -50,7 +50,7 @@
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes vibeGlow { 0% { text-shadow: 0 0 0px #ff6b35; } 50% { text-shadow: 0 0 20px #ff6b35; } 100% { text-shadow: 0 0 0px #ff6b35; } }
+        @keyframes ayoniGlow { 0% { text-shadow: 0 0 0px #ff6b35; } 50% { text-shadow: 0 0 20px #ff6b35; } 100% { text-shadow: 0 0 0px #ff6b35; } }
         @keyframes heartFloat { 0% { transform: scale(0.5) translateY(0); opacity: 1; } 100% { transform: scale(1.5) translateY(-50px); opacity: 0; } }
         @keyframes btnPress { 0% { transform: scale(1); } 50% { transform: scale(0.95); } 100% { transform: scale(1); } }
 
@@ -66,14 +66,14 @@
             transform: scale(0.95);
         }
 
-        .logo-vibe {
+        .logo-ayoni {
             font-size: 28px;
             font-weight: 800;
             background: linear-gradient(135deg, #ff6b35, #f7b733);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             cursor: pointer;
-            animation: vibeGlow 2s infinite;
+            animation: ayoniGlow 2s infinite;
         }
 
         .video-container {
@@ -347,12 +347,12 @@
 
 <div id="initLoader">
     <div class="spinner"></div>
-    <div style="margin-top: 16px; color: #ff6b35; font-weight: 500;">جاري تحميل VIBE...</div>
+    <div style="margin-top: 16px; color: #ff6b35; font-weight: 500;">جاري تحميل AYONI...</div>
 </div>
 
 <div id="authScreen" class="auth-screen">
     <div class="auth-card">
-        <h1>VIBE</h1>
+        <h1>AYONI</h1>
         <div id="loginForm" class="auth-form active">
             <div style="text-align: right; margin-bottom: 20px;">
                 <h2 style="font-size: 22px; font-weight: 700;">تسجيل الدخول</h2>
@@ -367,7 +367,7 @@
         <div id="registerForm" class="auth-form">
             <div style="text-align: right; margin-bottom: 20px;">
                 <h2 style="font-size: 22px; font-weight: 700;">إنشاء حساب</h2>
-                <p style="color: #8e8e8e; margin-top: 4px; font-size: 13px;">انضم إلى VIBE اليوم</p>
+                <p style="color: #8e8e8e; margin-top: 4px; font-size: 13px;">انضم إلى AYONI اليوم</p>
             </div>
             <input type="text" id="regName" placeholder="اسم المستخدم">
             <input type="email" id="regEmail" placeholder="البريد الإلكتروني">
@@ -382,7 +382,7 @@
 
 <div id="mainApp">
     <div class="top-bar">
-        <div class="logo-vibe" onclick="goToHome()">VIBE</div>
+        <div class="logo-ayoni" onclick="goToHome()">AYONI</div>
         <div class="top-icons">
             <i class="far fa-comment-dots top-icon" onclick="openConversations()"></i>
             <i class="fas fa-bookmark top-icon" onclick="openSavedPosts()"></i>
