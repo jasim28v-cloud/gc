@@ -15,16 +15,17 @@ let readModeActive = false;
 let hideLikesActive = false;
 let currentImageUrls = [];
 let currentImageIndex = 0;
-let lastPostKey = null;
+let lastPostTimestamp = null;
 let isLoadingMore = false;
 let hasMorePosts = true;
+let scrollListenerActive = false;
 
 let agoraClient = null;
 let localTracks = { videoTrack: null, audioTrack: null };
 let isCallActive = false;
 
-// قائمة الكلمات الممنوعة - يمكنك إضافة المزيد هنا
-let badWordsList = ['كس', 'عير', 'قحب', 'زنا', 'سكس', 'porn', 'sex', 'fuck', 'shit', 'bitch', 'كلب', 'حمار', 'خنزير', 'عاهرة', 'داعر', 'منيوك', 'متناك', 'شرموطة', 'قواد', 'لحس', 'نياكة', 'طيز', 'مص', 'نيك', 'بورن'];
+// قائمة الكلمات الممنوعة - يمكنك إضافة المزيد من لوحة التحكم
+let badWordsList = ['كس', 'عير', 'قحب', 'زنا', 'سكس', 'porn', 'sex', 'fuck', 'shit', 'bitch', 'كلب', 'حمار', 'خنزير', 'عاهرة', 'داعر'];
 
 // ==================== دوال مساعدة ====================
 function showToast(message, duration = 2000) {
@@ -106,6 +107,36 @@ function filterBadWords(text) {
         filtered = filtered.replace(regex, '*'.repeat(word.length));
     }
     return filtered;
+}
+
+// ==================== إدارة الكلمات الممنوعة ====================
+function loadBadWordsManager() {
+    const container = document.getElementById('badWordsManagerList');
+    if (!container) return;
+    
+    let html = '';
+    for (let i = 0; i < badWordsList.length; i++) {
+        html += `<span class="bad-word-tag" onclick="removeBadWord(${i})">🚫 ${escapeHtml(badWordsList[i])} ✖</span>`;
+    }
+    container.innerHTML = html || '<div class="text-center p-4 text-gray-500">لا توجد كلمات ممنوعة</div>';
+}
+
+function addBadWord() {
+    const input = document.getElementById('newBadWordInput');
+    const newWord = input.value.trim().toLowerCase();
+    if (!newWord) return showToast('الرجاء إدخال كلمة');
+    if (badWordsList.includes(newWord)) return showToast('الكلمة موجودة بالفعل');
+    badWordsList.push(newWord);
+    input.value = '';
+    loadBadWordsManager();
+    showToast(`✅ تم إضافة "${newWord}" إلى قائمة الكلمات الممنوعة`);
+}
+
+function removeBadWord(index) {
+    const removed = badWordsList[index];
+    badWordsList.splice(index, 1);
+    loadBadWordsManager();
+    showToast(`❌ تم إزالة "${removed}" من القائمة`);
 }
 
 // ==================== رفع الملفات ====================
@@ -336,11 +367,11 @@ function toggleTheme() {
     const themeIcon = document.getElementById('themeToggle');
     if (themeIcon) {
         if (isDark) {
-            themeIcon.classList.remove('fa-adjust');
+            themeIcon.classList.remove('fa-moon');
             themeIcon.classList.add('fa-sun');
         } else {
             themeIcon.classList.remove('fa-sun');
-            themeIcon.classList.add('fa-adjust');
+            themeIcon.classList.add('fa-moon');
         }
     }
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
@@ -493,14 +524,15 @@ async function login() {
         document.getElementById('authScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
         showToast(`مرحباً ${currentUser.displayName || currentUser.name}!`);
-        lastPostKey = null;
+        lastPostTimestamp = null;
         hasMorePosts = true;
+        isLoadingMore = false;
         loadFeed();
         loadNotifications();
         loadTrendingHashtags();
         loadDndStatus();
         checkScheduledPosts();
-        loadBadWordsReports();
+        if (currentUser.isAdmin) loadBadWordsManager();
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark') document.body.classList.add('dark-mode');
         const savedReadMode = localStorage.getItem('readMode');
@@ -666,45 +698,6 @@ async function submitReport() {
     });
     showToast('تم إرسال البلاغ، شكراً لك');
     closeReportModal();
-    if (currentUser.isAdmin) loadBadWordsReports();
-}
-
-async function loadBadWordsReports() {
-    if (!currentUser?.isAdmin) return;
-    const reportsSnapshot = await db.ref('reports').once('value');
-    const reports = reportsSnapshot.val();
-    const container = document.getElementById('badWordsList');
-    if (!container) return;
-    
-    if (!reports) {
-        container.innerHTML = '<div class="text-center p-4 text-gray-500">لا توجد تقارير كلمات مسيئة</div>';
-        return;
-    }
-    
-    let badWordsMap = new Map();
-    for (const [postId, postReports] of Object.entries(reports)) {
-        for (const [reportId, report] of Object.entries(postReports)) {
-            const word = report.reason;
-            if (word) {
-                badWordsMap.set(word, (badWordsMap.get(word) || 0) + 1);
-            }
-        }
-    }
-    
-    if (badWordsMap.size === 0) {
-        container.innerHTML = '<div class="text-center p-4 text-gray-500">✅ لا توجد كلمات مسيئة مبلغ عنها</div>';
-        return;
-    }
-    
-    let html = '<div style="max-height: 300px; overflow-y: auto;">';
-    for (const [word, count] of badWordsMap.entries()) {
-        html += `<div class="admin-item bad-word-item">
-            <div><span style="font-weight: 600;">🚫 ${escapeHtml(word)}</span></div>
-            <div>تم الإبلاغ ${count} مرة</div>
-        </div>`;
-    }
-    html += '</div>';
-    container.innerHTML = html;
 }
 
 // ==================== حظر وتقييد ====================
@@ -846,8 +839,9 @@ async function createPost() {
     selectedMediaFile = null;
     editingPostId = null;
     closeCompose();
-    lastPostKey = null;
+    lastPostTimestamp = null;
     hasMorePosts = true;
+    isLoadingMore = false;
     loadFeed();
     loadTrendingHashtags();
     showToast('تم نشر المنشور بنجاح!');
@@ -865,8 +859,9 @@ async function deletePost(postId) {
         }
     }
     await db.ref(`posts/${postId}`).remove();
-    lastPostKey = null;
+    lastPostTimestamp = null;
     hasMorePosts = true;
+    isLoadingMore = false;
     loadFeed();
     loadTrendingHashtags();
     showToast('تم حذف المنشور');
@@ -965,23 +960,42 @@ async function loadTrendingHashtags() {
     }
 }
 
-// ==================== التغذية مع Pagination ====================
+// ==================== Infinite Scroll - التحميل التلقائي ====================
+function setupInfiniteScroll() {
+    if (scrollListenerActive) return;
+    scrollListenerActive = true;
+    
+    window.addEventListener('scroll', () => {
+        if (isLoadingMore || !hasMorePosts) return;
+        
+        const scrollPosition = window.scrollY + window.innerHeight;
+        const pageHeight = document.documentElement.scrollHeight;
+        
+        // لما يوصل لآخر 300 بكسل، حمّل المزيد تلقائياً
+        if (scrollPosition >= pageHeight - 300) {
+            loadFeed(false);
+        }
+    });
+}
+
+// ==================== التغذية مع Infinite Scroll ====================
 async function loadFeed(reset = true) {
     const feedContainer = document.getElementById('feedContainer');
     if (!feedContainer) return;
     
     if (reset) {
         feedContainer.innerHTML = '<div class="loading"><div class="spinner"></div><span>جاري التحميل...</span></div>';
-        lastPostKey = null;
+        lastPostTimestamp = null;
         hasMorePosts = true;
+        isLoadingMore = false;
     }
     
-    if (isLoadingMore) return;
+    if (isLoadingMore || !hasMorePosts) return;
     isLoadingMore = true;
     
-    let postsQuery = db.ref('posts').orderByKey().limitToLast(10);
-    if (lastPostKey) {
-        postsQuery = db.ref('posts').orderByKey().endAt(lastPostKey).limitToLast(10);
+    let postsQuery = db.ref('posts').orderByChild('timestamp').limitToLast(10);
+    if (lastPostTimestamp) {
+        postsQuery = db.ref('posts').orderByChild('timestamp').endAt(lastPostTimestamp - 1).limitToLast(10);
     }
     
     const snapshot = await postsQuery.once('value');
@@ -996,13 +1010,21 @@ async function loadFeed(reset = true) {
     
     let postsArray = Object.values(posts).sort((a, b) => b.timestamp - a.timestamp);
     
-    const firstKey = Object.keys(posts)[0];
-    if (firstKey === lastPostKey) {
+    if (postsArray.length === 0) {
         hasMorePosts = false;
         isLoadingMore = false;
         return;
     }
-    lastPostKey = Object.keys(posts)[0];
+    
+    const newLastTimestamp = Math.min(...postsArray.map(p => p.timestamp));
+    if (lastPostTimestamp === newLastTimestamp) {
+        hasMorePosts = false;
+        isLoadingMore = false;
+        return;
+    }
+    lastPostTimestamp = newLastTimestamp;
+    
+    if (postsArray.length < 10) hasMorePosts = false;
     
     const blockedSnapshot = await db.ref(`users/${currentUser?.uid}/blockedUsers`).once('value');
     const blockedUsers = blockedSnapshot.val() || {};
@@ -1135,18 +1157,9 @@ async function loadFeed(reset = true) {
     
     if (reset) {
         feedContainer.innerHTML = html;
+        setupInfiniteScroll();
     } else {
-        const loadMoreDiv = feedContainer.querySelector('.load-more-btn');
-        if (loadMoreDiv) loadMoreDiv.remove();
         feedContainer.innerHTML = html;
-    }
-    
-    if (hasMorePosts && !reset && postsArray.length > 0) {
-        const loadMoreBtn = document.createElement('div');
-        loadMoreBtn.className = 'load-more-btn';
-        loadMoreBtn.innerHTML = '<i class="fas fa-arrow-down"></i> تحميل المزيد';
-        loadMoreBtn.onclick = () => loadFeed(false);
-        feedContainer.appendChild(loadMoreBtn);
     }
     
     isLoadingMore = false;
@@ -1509,10 +1522,10 @@ async function loadNotifications() {
         if (notifications) {
             const unread = Object.values(notifications).filter(n => !n.read).length;
             if (unread > 0) {
-                if (!existingBadge) parent.innerHTML = '<i class="far fa-bell"></i><div class="notification-badge">' + unread + '</div>';
+                if (!existingBadge) parent.innerHTML = '<i class="fas fa-bell"></i><div class="notification-badge">' + unread + '</div>';
                 else existingBadge.textContent = unread;
-            } else if (existingBadge) parent.innerHTML = '<i class="far fa-bell"></i>';
-        } else if (existingBadge) parent.innerHTML = '<i class="far fa-bell"></i>';
+            } else if (existingBadge) parent.innerHTML = '<i class="fas fa-bell"></i>';
+        } else if (existingBadge) parent.innerHTML = '<i class="fas fa-bell"></i>';
     });
 }
 
@@ -1548,7 +1561,7 @@ async function openAdminPanel() {
     if (currentUser.email !== ADMIN_EMAIL && !currentUser.isAdmin) return showToast('🚫 غير مصرح لك بالدخول إلى لوحة التحكم');
     showToast('🔧 جاري تحميل لوحة التحكم...');
     
-    await loadBadWordsReports();
+    loadBadWordsManager();
     
     const usersSnapshot = await db.ref('users').once('value');
     const postsSnapshot = await db.ref('posts').once('value');
@@ -1743,8 +1756,9 @@ function goToHome() {
 
 function switchTab(tab) {
     if (tab === 'home') {
-        lastPostKey = null;
+        lastPostTimestamp = null;
         hasMorePosts = true;
+        isLoadingMore = false;
         loadFeed();
     }
 }
@@ -1819,14 +1833,15 @@ auth.onAuthStateChanged(async (user) => {
             document.getElementById('hideLikesToggle')?.classList.add('active');
         }
         
-        lastPostKey = null;
+        lastPostTimestamp = null;
         hasMorePosts = true;
+        isLoadingMore = false;
         loadFeed();
         loadNotifications();
         loadTrendingHashtags();
         loadDndStatus();
         checkScheduledPosts();
-        if (currentUser.isAdmin) loadBadWordsReports();
+        if (currentUser.isAdmin) loadBadWordsManager();
     } else {
         document.getElementById('authScreen').style.display = 'flex';
         document.getElementById('mainApp').style.display = 'none';
